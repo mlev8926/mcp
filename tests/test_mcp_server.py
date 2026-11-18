@@ -1,4 +1,6 @@
+import ast
 import importlib
+import json
 import sys
 
 import pytest
@@ -24,9 +26,22 @@ def server_module(tmp_path, monkeypatch):
 
 def payload(result):
     data = result.structured_content
-    if isinstance(data, dict) and "result" in data:
-        return data["result"]
-    return data
+    if data is not None:
+        if isinstance(data, dict) and "result" in data:
+            return data["result"]
+        return data
+    for block in result.content:
+        text = getattr(block, "text", None)
+        if text is None:
+            continue
+        try:
+            return json.loads(text)
+        except (TypeError, json.JSONDecodeError):
+            try:
+                return ast.literal_eval(text)
+            except (ValueError, SyntaxError):
+                return text
+    return None
 
 @pytest.mark.anyio
 async def test_all_eight_tools_and_two_resources(server_module, tmp_path):
