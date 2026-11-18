@@ -188,4 +188,4 @@ async def test_real_stdio_subprocess_transport(tmp_path):
         status = await client.call_tool("nexus_project_status", {})
         assert status.is_error is False
         status_data = payload(status)
-        assert status_data["governance_present"] is True
+        assert status_data["governance_ready"] is True
