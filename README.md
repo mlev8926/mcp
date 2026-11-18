@@ -1,104 +1,104 @@
-# NEXUS MCP
+# NEXUS MCP — Architecture Governance Engine
 
-AI-native Model Context Protocol server for Nexus SaaS project intelligence and architecture governance.
+NEXUS MCP is the blueprint, architecture-governance, and AI coding control layer for building Nexus SaaS from zero. The SaaS application itself is **not assumed to exist**.
 
-## What it does
+## Two separate roots
 
-- Refreshes project context at the start of an AI coding session.
-- Hashes project files and reports added, changed, and removed paths.
-- Exposes architecture/governance through MCP tools and resources.
-- Applies deterministic guardrails to proposed changes.
-- Keeps approved architecture separate from observed implementation and unapproved proposals.
+- **Governance root:** this repository (`mlev8926/mcp`). It stores the product constitution, architecture constitution, decision register, build blueprint, quality gates, module contracts, and AI rules.
+- **Development workspace:** the future Nexus SaaS application repository. It is optional and can remain unset until the owner authorizes application creation.
 
-## AutoLearn boundary
+Do not point the governance root at a future app directory. Do not treat a proposed framework as approved architecture.
 
-NEXUS MCP synchronizes project facts; it does not retrain model weights. A file watcher refreshes the local hash snapshot only. It does **not** inject files into an AI model's context. The AI host must call `nexus_bootstrap_context` at session start, inspect relevant files, and call `nexus_sync_project_context` after edits. The MCP server's initialization instructions tell compatible hosts about this workflow; repository agent instructions reinforce it.
+## Approved product direction
 
-## Requirements and install
+- Product model: both SaaS and self-hosted/on-premise.
+- Module engine: dynamic and contract-driven.
+- Deployment model: hybrid.
+- Quality goal: enterprise-grade resilience, security, tenant isolation, and stable core. "Zero crash" is an aspiration, not a guarantee.
 
-- Python 3.11+
-- Official MCP Python SDK v2
-- uv
+The backend, frontend, database, tenant topology, identity, cloud, queue, and other technical decisions remain PROPOSED or UNKNOWN unless explicitly approved in `governance/DECISION_REGISTER.md`.
 
-From this repository:
+## Governance documents
+
+- `governance/PRODUCT_CONSTITUTION.md` — approved product direction.
+- `governance/ARCHITECTURE_CONSTITUTION.md` — architecture principles and boundaries.
+- `governance/DECISION_REGISTER.md` — APPROVED, PROPOSED, and UNKNOWN decisions.
+- `governance/BUILD_BLUEPRINT.md` — staged build plan from zero to enterprise release.
+- `governance/ENTERPRISE_QUALITY_GATES.md` — evidence-based engineering and release gates.
+- `governance/MODULE_CONTRACT_TEMPLATE.md` — module contract starter.
+- `governance/AI_CODING_RULES.md` — mandatory AI workflow.
+
+## AutoLearn / project-context synchronization
+
+NEXUS MCP maintains a project file index and exposes tools/resources to compatible AI hosts. It does not retrain model weights or silently inject every changed file into a model. The host must call bootstrap, read relevant documents/files, and sync after changes. The optional watcher refreshes the local snapshot only.
+
+## Install and validate
+
+Requirements: Python 3.11+ and uv.
 
 ```bash
 uv sync --all-groups
 uv run pytest -q
 ```
 
-Set `NEXUS_PROJECT_ROOT` to the absolute path of the Nexus SaaS repository. Then launch:
+## Configure Codex before the application exists
+
+Set only the governance root. Leave `NEXUS_WORKSPACE_ROOT` unset until the owner creates or selects the Nexus SaaS application workspace.
 
 ```bash
-NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas uv run python -m nexus_mcp.server
+codex mcp add nexus \
+  --env NEXUS_GOVERNANCE_ROOT=/absolute/path/to/mcp \
+  -- uv run --project /absolute/path/to/mcp python -m nexus_mcp.server
+codex mcp list
 ```
 
-Optional watcher (separate terminal):
+Or merge `integrations/codex-config.toml.example` into `~/.codex/config.toml`, replacing the path.
 
-```bash
-NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas uv run python -m nexus_mcp.watch
+After connecting, restart Codex and use `/mcp` to confirm the server. At session start, the agent must call:
+
+1. `nexus_bootstrap_context`
+2. `nexus_get_architecture_context`
+3. `nexus_get_build_blueprint`
+4. `nexus_get_decision_register`
+5. `nexus_get_workspace_status`
+
+Copy `integrations/AGENTS.md` into the root of a future Nexus SaaS workspace when that workspace is created.
+
+## Configure the future application workspace
+
+Once the owner creates/selects the application repository, add the following environment variable to the MCP server configuration:
+
+```toml
+[mcp_servers.nexus.env]
+NEXUS_GOVERNANCE_ROOT = "/absolute/path/to/mcp"
+NEXUS_WORKSPACE_ROOT = "/absolute/path/to/nexus-saas"
 ```
 
-Windows PowerShell:
-
-```powershell
-$env:NEXUS_PROJECT_ROOT = "C:\\work\\nexus-saas"
-uv run python -m nexus_mcp.server
-```
+Both directories must be separate and exist. Until then, MCP operates in blueprint/governance mode and indexes its own governance repository.
 
 ## MCP tools
 
-1. `nexus_bootstrap_context`
-2. `nexus_sync_project_context`
-3. `nexus_project_status`
-4. `nexus_search_project`
-5. `nexus_read_project_file`
-6. `nexus_get_architecture_context`
-7. `nexus_validate_change`
-8. `nexus_propose_adr`
+- `nexus_bootstrap_context` — mandatory session start and context refresh.
+- `nexus_sync_project_context` — refresh index and report file deltas.
+- `nexus_project_status` — report governance readiness and workspace state.
+- `nexus_get_build_blueprint` — staged application build plan.
+- `nexus_get_decision_register` — approved/proposed/unknown architecture decisions.
+- `nexus_get_workspace_status` — confirm whether an application workspace is configured.
+- `nexus_search_project` — search active workspace, or governance repository before workspace creation.
+- `nexus_read_project_file` — read a safe text file within the active root.
+- `nexus_get_architecture_context` — read product/architecture/AI governance.
+- `nexus_validate_change` — deterministic guardrails, not a formal security audit.
+- `nexus_propose_adr` — create an unapproved proposal; does not change approved decisions.
 
 Resources:
 - `nexus://project/status`
 - `nexus://architecture/context`
-
-## Codex integration
-
-Codex CLI, ChatGPT desktop, and the Codex IDE extension share MCP configuration. Add the server from a terminal (replace both paths):
-
-```bash
-codex mcp add nexus --env NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas -- uv run --project /absolute/path/to/mcp python -m nexus_mcp.server
-codex mcp list
-```
-
-Alternatively, add this to `~/.codex/config.toml` (or project-scoped `.codex/config.toml` in a trusted project):
-
-```toml
-[mcp_servers.nexus]
-command = "uv"
-args = ["run", "--project", "/absolute/path/to/mcp", "python", "-m", "nexus_mcp.server"]
-cwd = "/absolute/path/to/mcp"
-startup_timeout_sec = 20
-tool_timeout_sec = 60
-
-[mcp_servers.nexus.env]
-NEXUS_PROJECT_ROOT = "/absolute/path/to/nexus-saas"
-```
-
-Restart Codex, then use `/mcp` to confirm the server and tools are available. Copy `integrations/AGENTS.md` into the root of the Nexus SaaS repository so the coding agent follows the session-start and post-edit workflow.
+- `nexus://blueprint/build`
+- `nexus://governance/decisions`
 
 ## Security and limitations
 
-- File reads are constrained to the configured project root.
-- Symlinks, common secret names, environment files, private-key files, and generated snapshot data are excluded from indexing.
-- ADR proposals are written under `governance/adr/proposals`; they do not approve or replace architecture.
-- Rule-based validation is a guardrail, not a semantic proof, security audit, or guarantee of zero crashes.
-- Run integration tests with the actual host and local paths before production use.
-
-## Governance states
-
-- **APPROVED DESIGN** — canonical, explicitly approved project decisions.
-- **OBSERVED IMPLEMENTATION** — facts read from the current repository.
-- **PROPOSED** — suggestions awaiting approval.
-- **UNKNOWN** — information not established by either source.
-
-The architecture constitution in this repository is a starter baseline. Treat its decisions as proposed until the project owner explicitly approves them.
+- Reads are constrained to the active root; common secrets, private-key files, and symlinks are excluded/rejected.
+- ADR proposals are not approved automatically.
+- Deterministic validation is not semantic proof, a complete secret scanner, security audit, or zero-crash guarantee.
+- A successful CI run validates the tested code paths only; real-host integration and production readiness require separate evidence.
