@@ -1,5 +1,6 @@
-# Merge this into ~/.codex/config.toml.
-# Replace both absolute paths with paths on the machine running Codex.
+# Merge into ~/.codex/config.toml.
+# The governance repository is this NEXUS MCP checkout.
+# Do not set NEXUS_WORKSPACE_ROOT until the Nexus SaaS application workspace exists.
 [mcp_servers.nexus]
 command = "uv"
 args = ["run", "--project", "/ABSOLUTE/PATH/TO/mcp", "python", "-m", "nexus_mcp.server"]
@@ -8,4 +9,4 @@ startup_timeout_sec = 20
 tool_timeout_sec = 60
 
 [mcp_servers.nexus.env]
-NEXUS_PROJECT_ROOT = "/ABSOLUTE/PATH/TO/nexus-saas"
+NEXUS_GOVERNANCE_ROOT = "/ABSOLUTE/PATH/TO/mcp"
