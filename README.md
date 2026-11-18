@@ -2,78 +2,103 @@
 
 AI-native Model Context Protocol server for Nexus SaaS project intelligence and architecture governance.
 
-## Goals
+## What it does
 
-- Refresh project context at the start of an AI coding session.
-- Index project files and hashes so code changes can be detected.
-- Expose architecture and governance context through MCP tools/resources.
-- Validate proposed changes against explicit project rules.
-- Keep approved architecture separate from observed implementation and unapproved proposals.
+- Refreshes project context at the start of an AI coding session.
+- Hashes project files and reports added, changed, and removed paths.
+- Exposes architecture/governance through MCP tools and resources.
+- Applies deterministic guardrails to proposed changes.
+- Keeps approved architecture separate from observed implementation and unapproved proposals.
 
-## Important: AutoLearn boundary
+## AutoLearn boundary
 
-NEXUS MCP synchronizes project facts; it does not retrain model weights or silently modify canonical architecture. A file watcher can refresh the local index, but the AI client must retrieve the updated context through MCP. The host must call `nexus_bootstrap_context` at session start and `nexus_sync_project_context` after edits.
+NEXUS MCP synchronizes project facts; it does not retrain model weights. A file watcher refreshes the local hash snapshot only. It does **not** inject files into an AI model's context. The AI host must call `nexus_bootstrap_context` at session start, inspect relevant files, and call `nexus_sync_project_context` after edits. The MCP server's initialization instructions tell compatible hosts about this workflow; repository agent instructions reinforce it.
 
-## Requirements
+## Requirements and install
 
 - Python 3.11+
-- MCP Python SDK v2
-- uv (recommended)
+- Official MCP Python SDK v2
+- uv
 
-## Install
+From this repository:
 
 ```bash
-uv sync
-cp nexus-mcp.toml.example nexus-mcp.toml
+uv sync --all-groups
+uv run pytest -q
 ```
 
-Set `NEXUS_PROJECT_ROOT` to the Nexus SaaS repository path, then run:
+Set `NEXUS_PROJECT_ROOT` to the absolute path of the Nexus SaaS repository. Then launch:
 
 ```bash
+NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas uv run python -m nexus_mcp.server
+```
+
+Optional watcher (separate terminal):
+
+```bash
+NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas uv run python -m nexus_mcp.watch
+```
+
+Windows PowerShell:
+
+```powershell
+$env:NEXUS_PROJECT_ROOT = "C:\\work\\nexus-saas"
 uv run python -m nexus_mcp.server
 ```
 
-Optional file watcher (separate terminal):
+## MCP tools
+
+1. `nexus_bootstrap_context`
+2. `nexus_sync_project_context`
+3. `nexus_project_status`
+4. `nexus_search_project`
+5. `nexus_read_project_file`
+6. `nexus_get_architecture_context`
+7. `nexus_validate_change`
+8. `nexus_propose_adr`
+
+Resources:
+- `nexus://project/status`
+- `nexus://architecture/context`
+
+## Codex integration
+
+Codex CLI, ChatGPT desktop, and the Codex IDE extension share MCP configuration. Add the server from a terminal (replace both paths):
 
 ```bash
-uv run python -m nexus_mcp.watch
+codex mcp add nexus --env NEXUS_PROJECT_ROOT=/absolute/path/to/nexus-saas -- uv run --project /absolute/path/to/mcp python -m nexus_mcp.server
+codex mcp list
 ```
 
-## MCP client configuration
+Alternatively, add this to `~/.codex/config.toml` (or project-scoped `.codex/config.toml` in a trusted project):
 
-Configure the MCP client to launch the server with stdio transport. Set the working directory to this repository and provide:
+```toml
+[mcp_servers.nexus]
+command = "uv"
+args = ["run", "--project", "/absolute/path/to/mcp", "python", "-m", "nexus_mcp.server"]
+cwd = "/absolute/path/to/mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
 
-- `NEXUS_PROJECT_ROOT`
-- `NEXUS_MCP_CONFIG` (optional; defaults to `nexus-mcp.toml`)
+[mcp_servers.nexus.env]
+NEXUS_PROJECT_ROOT = "/absolute/path/to/nexus-saas"
+```
 
-## Exposed tools
+Restart Codex, then use `/mcp` to confirm the server and tools are available. Copy `integrations/AGENTS.md` into the root of the Nexus SaaS repository so the coding agent follows the session-start and post-edit workflow.
 
-- `nexus_bootstrap_context`
-- `nexus_sync_project_context`
-- `nexus_project_status`
-- `nexus_search_project`
-- `nexus_read_project_file`
-- `nexus_get_architecture_context`
-- `nexus_validate_change`
-- `nexus_propose_adr`
+## Security and limitations
 
-## Safety model
-
-- Source files are read-only by default.
 - File reads are constrained to the configured project root.
-- Secret-like files and common credential patterns are excluded/redacted.
-- ADR proposals are written as proposals; they do not approve or replace architecture.
-- Rule-based validation is a guardrail, not a formal security audit or proof of correctness.
+- Symlinks, common secret names, environment files, private-key files, and generated snapshot data are excluded from indexing.
+- ADR proposals are written under `governance/adr/proposals`; they do not approve or replace architecture.
+- Rule-based validation is a guardrail, not a semantic proof, security audit, or guarantee of zero crashes.
+- Run integration tests with the actual host and local paths before production use.
 
 ## Governance states
 
-1. **APPROVED DESIGN** — canonical, explicitly approved project decisions.
-2. **OBSERVED IMPLEMENTATION** — facts read from the current repository.
-3. **PROPOSED** — suggestions awaiting approval.
-4. **UNKNOWN** — information not established by either source.
+- **APPROVED DESIGN** — canonical, explicitly approved project decisions.
+- **OBSERVED IMPLEMENTATION** — facts read from the current repository.
+- **PROPOSED** — suggestions awaiting approval.
+- **UNKNOWN** — information not established by either source.
 
-Never present a proposal or assumption as an approved design.
-
-## Status
-
-Starter implementation. Run tests and a real MCP client integration test before production deployment. No zero-crash guarantee is implied.
+The architecture constitution in this repository is a starter baseline. Treat its decisions as proposed until the project owner explicitly approves them.
