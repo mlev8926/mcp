@@ -56,7 +56,9 @@ async def test_all_eight_tools_and_two_resources(server_module, tmp_path):
         }
         assert names == expected
 
-        status = payload(await client.call_tool("nexus_project_status", {}))
+        status_result = await client.call_tool("nexus_project_status", {})
+        status = payload(status_result)
+        assert status is not None, status_result.model_dump()
         assert status["governance_present"] is True
         assert status["file_count"] >= 3
 
