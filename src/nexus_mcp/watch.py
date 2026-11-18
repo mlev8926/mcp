@@ -31,7 +31,8 @@ class Handler(FileSystemEventHandler):
         save_snapshot(self.root, build_snapshot(self.root))
 
 def main():
-    root = load_settings().project_root
+    settings = load_settings()
+    root = settings.workspace_root or settings.governance_root
     observer = Observer()
     observer.schedule(Handler(root), str(root), recursive=True)
     observer.start()
