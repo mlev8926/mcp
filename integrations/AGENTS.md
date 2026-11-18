@@ -1,29 +1,38 @@
 # NEXUS AI Agent Operating Rules
 
-These instructions apply to work in the Nexus SaaS repository when the NEXUS MCP server is connected.
+These rules govern AI-assisted design and implementation of Nexus SaaS. The NEXUS MCP repository is the governance source; the application workspace may not exist yet.
 
 ## Mandatory session start
-1. Call `nexus_bootstrap_context` before planning or editing.
-2. Read the returned governance and note the project root and changed/removed files.
-3. Call `nexus_project_status` if the bootstrap inventory is empty or governance is missing.
-4. Classify every architecture claim as APPROVED DESIGN, OBSERVED IMPLEMENTATION, PROPOSED, or UNKNOWN.
+1. Call `nexus_bootstrap_context`.
+2. Read `nexus_get_architecture_context`, `nexus_get_build_blueprint`, and `nexus_get_decision_register`.
+3. Call `nexus_get_workspace_status`; never assume the Nexus SaaS application already exists.
+4. Distinguish APPROVED DESIGN, OBSERVED IMPLEMENTATION, PROPOSED, and UNKNOWN.
+5. Treat only decisions marked APPROVED in the register as binding.
 
-## Before changes
-1. Search for the relevant implementation with `nexus_search_project`.
-2. Read the exact source, contract, schema, migration, and tests with `nexus_read_project_file`.
-3. Inspect dependency and module contracts before changing boundaries.
-4. If a required decision is UNKNOWN or conflicts with canonical governance, stop and ask the project owner.
+## If no application workspace exists
+- Work in blueprint, specification, ADR, contract, and planning mode.
+- Do not claim source code, database schemas, APIs, or features have been implemented.
+- Do not silently create or assume a separate application repository.
+- Ask the owner before selecting unresolved technical choices or starting implementation.
+
+## Before implementation (once a workspace is configured)
+1. Identify applicable approved decision IDs.
+2. Search and read relevant source, module contracts, schemas, migrations, tests, and dependency declarations.
+3. Produce a scoped plan: files, contracts, dependencies, tests, security impact, migration impact, and rollback.
+4. Stop for owner approval when the task requires a new architecture decision or changes scope.
 
 ## After changes
-1. Run relevant tests, static checks, and migration validation.
-2. Call `nexus_validate_change` with a concise summary and every touched path.
-3. Resolve or explicitly report every finding.
+1. Run relevant tests, static checks, migration checks, and security checks.
+2. Call `nexus_validate_change` with a summary and every touched path.
+3. Resolve or explicitly report findings.
 4. Call `nexus_sync_project_context` and report added, changed, and removed paths.
-5. Never claim that a watcher has updated model memory. It updates the local snapshot; the agent must retrieve the updated context through MCP.
+5. Report evidence, exact test results, unresolved risks, and decision IDs.
 
 ## Hard constraints
-- Never invent APIs, modules, events, schemas, or architecture decisions.
-- Never silently edit approved architecture. Use `nexus_propose_adr` for a proposal and wait for owner approval.
+- Never invent modules, APIs, events, schemas, vendors, or architecture decisions.
+- Never promote PROPOSED or UNKNOWN to APPROVED.
+- Never modify approved governance without explicit owner approval.
 - Preserve tenant isolation, authorization boundaries, module lifecycle contracts, migration safety, and core stability.
 - Do not read, expose, or commit secrets.
-- A passing rule check is not proof of correctness or security.
+- A green rule-based check is not proof of correctness, security, or zero-crash behavior.
+- A file watcher updates a local snapshot only; the AI agent must retrieve context through MCP.
