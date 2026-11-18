@@ -119,3 +119,32 @@ async def test_read_tool_rejects_path_traversal_and_secret_files(server_module, 
         )
         assert traversal.is_error is True
         assert secret.is_error is True
+
+@pytest.mark.anyio
+async def test_real_stdio_subprocess_transport(tmp_path):
+    from pathlib import Path
+    import os
+    import sys
+    from mcp import StdioServerParameters
+
+    (tmp_path / "governance").mkdir()
+    (tmp_path / "governance" / "ARCHITECTURE_CONSTITUTION.md").write_text(
+        "# Stdio Test\\n", encoding="utf-8"
+    )
+    (tmp_path / "governance" / "AI_CODING_RULES.md").write_text(
+        "# Agent Rules\\n", encoding="utf-8"
+    )
+    project_dir = Path(__file__).resolve().parents[1]
+    server = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "nexus_mcp.server"],
+        env={"NEXUS_PROJECT_ROOT": str(tmp_path)},
+        cwd=str(project_dir),
+    )
+    async with Client(server) as client:
+        assert client.instructions and "nexus_bootstrap_context" in client.instructions
+        listed = await client.list_tools()
+        assert len(listed.tools) == 8
+        status = await client.call_tool("nexus_project_status", {})
+        assert status.is_error is False
+        assert status.structured_content["governance_present"] is True
