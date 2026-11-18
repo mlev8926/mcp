@@ -1,0 +1,5 @@
+[project]
+name = "Nexus SaaS"
+root = "."
+exclude = [".git", ".venv", "__pycache__", "node_modules", "dist", "build", ".next"]
+max_file_bytes = 500000
