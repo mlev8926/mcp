@@ -1,0 +1,11 @@
+# Merge this into ~/.codex/config.toml.
+# Replace both absolute paths with paths on the machine running Codex.
+[mcp_servers.nexus]
+command = "uv"
+args = ["run", "--project", "/ABSOLUTE/PATH/TO/mcp", "python", "-m", "nexus_mcp.server"]
+cwd = "/ABSOLUTE/PATH/TO/mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+
+[mcp_servers.nexus.env]
+NEXUS_PROJECT_ROOT = "/ABSOLUTE/PATH/TO/nexus-saas"
