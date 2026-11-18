@@ -5,12 +5,30 @@ from .config import load_settings
 from .indexer import build_snapshot, save_snapshot
 import time
 
+IGNORED_PARTS = {".git", ".venv", "__pycache__", "node_modules", "dist", "build", ".next", ".nexus-mcp"}
+
 class Handler(FileSystemEventHandler):
     def __init__(self, root: Path):
-        self.root = root
+        self.root = root.resolve()
+        self.last_refresh = 0.0
+
     def on_any_event(self, event):
-        if not event.is_directory:
-            save_snapshot(self.root, build_snapshot(self.root))
+        if event.is_directory:
+            return
+        try:
+            changed = Path(event.src_path).resolve()
+            relative = changed.relative_to(self.root)
+        except (OSError, ValueError):
+            return
+        if any(part in IGNORED_PARTS for part in relative.parts):
+            return
+        if relative.name.startswith(".env") or "secret" in relative.name.lower() or "credential" in relative.name.lower():
+            return
+        now = time.monotonic()
+        if now - self.last_refresh < 0.5:
+            return
+        self.last_refresh = now
+        save_snapshot(self.root, build_snapshot(self.root))
 
 def main():
     root = load_settings().project_root
