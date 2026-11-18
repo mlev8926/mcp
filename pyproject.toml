@@ -1,12 +1,15 @@
 [project]
 name = "nexus-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "NEXUS MCP server for architecture governance and project intelligence"
 requires-python = ">=3.11"
 dependencies = ["mcp[cli]>=2,<3", "watchdog>=6,<7"]
 
 [project.scripts]
 nexus-mcp = "nexus_mcp.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "anyio>=4.0"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
